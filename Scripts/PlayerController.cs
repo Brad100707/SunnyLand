@@ -13,10 +13,10 @@ public class PlayerController : MonoBehaviour
     int Cherry = 0;
     public Text CherryNumber;
     public bool isHurt;
-    public AudioSource JumpAudio; 
-    public AudioSource HurtAudio;
-    public AudioSource CollectionAudio;
-    public Transform CellingCheck;
+
+    public Transform CellingCheck,GroundCheck;
+    private bool isGround;
+    public int ExtraJump;
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -28,12 +28,15 @@ public class PlayerController : MonoBehaviour
     {
         Crouch();
         CherryNumber.text = Cherry.ToString();
+        NewJump();
+
     }
 
     void FixedUpdate()
     {
         if (!isHurt)
         {
+            isGround = Physics2D.OverlapCircle(GroundCheck.position, 0.2f, Ground);
             float Horizontalmove = Input.GetAxis("Horizontal");
             float Facedirection = Input.GetAxisRaw("Horizontal");
             if (Horizontalmove != 0)
@@ -45,13 +48,18 @@ public class PlayerController : MonoBehaviour
             {
                 transform.localScale = new Vector3(Facedirection, 1, 1);
             }
-            if (Input.GetButton("Jump") && coll.IsTouchingLayers(Ground))
-            {
-                rb.velocity = new Vector3(rb.velocity.x, Jumpforce * Time.fixedDeltaTime, 0);
-                anim.SetBool("jumping", true);
-                anim.SetBool("falling", false);
-                JumpAudio.Play();
-            }
+            
+
+
+            ///if (Input.GetButton("Jump") && coll.IsTouchingLayers(Ground))
+            //{
+            // rb.velocity = new Vector3(rb.velocity.x, Jumpforce * Time.fixedDeltaTime, 0);
+            //anim.SetBool("jumping", true);
+            //anim.SetBool("falling", false);
+            //JumpAudio.Play();
+            //}
+
+
 
         }
 
@@ -100,7 +108,7 @@ public class PlayerController : MonoBehaviour
     {
         if(other.tag == "Collection")
         {
-            CollectionAudio.Play();
+            SoundManger.Instance.CherryAudio();
             other.GetComponent<Animator>().Play("cherryget");
             //Destroy(other.gameObject);
             //Cherry += 1;
@@ -130,13 +138,13 @@ public class PlayerController : MonoBehaviour
             }
             else if(transform.position.x < other.gameObject.transform.position.x)
             {
-                HurtAudio.Play();
+                SoundManger.Instance.HurtAudio();
                 rb.velocity = new Vector2(-10, rb.velocity.y);
                 isHurt = true;
             }
             else if (transform.position.x > other.gameObject.transform.position.x)
             {
-                HurtAudio.Play();
+                SoundManger.Instance.HurtAudio();
                 rb.velocity = new Vector2(10, rb.velocity.y);
                 isHurt = true;
             }
@@ -158,6 +166,31 @@ public class PlayerController : MonoBehaviour
                 GetComponent<BoxCollider2D>().enabled = true;
 
             }
+        }
+    }
+
+    void NewJump()
+    {
+        if (isGround)
+        {
+            ExtraJump = 1;
+        }
+        if (Input.GetButtonDown("Jump") && ExtraJump > 0)
+        {
+            rb.velocity = Vector2.up * Jumpforce;
+            ExtraJump--;
+            anim.SetBool("jumping", true);
+            //anim.SetBool("falling", false);
+            SoundManger.Instance.JumpAudio();
+
+        }
+        if (Input.GetButtonDown("Jump") && ExtraJump == 0 && isGround)
+        {
+            rb.velocity = Vector2.up * Jumpforce;
+            anim.SetBool("jumping", true);
+            //anim.SetBool("falling", false);
+            SoundManger.Instance.JumpAudio();
+
         }
     }
 
